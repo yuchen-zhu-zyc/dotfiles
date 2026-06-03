@@ -9,6 +9,7 @@ fi
 
 # If you come from bash you might have to change your $PATH.
 # export PATH=$HOME/bin:$HOME/.local/bin:/usr/local/bin:$PATH
+export PATH="$HOME/.local/bin:$PATH"
 
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
@@ -140,17 +141,24 @@ eval "$(zoxide init zsh)"
 
 # >>> conda initialize >>>
 # !! Contents within this block are managed by 'conda init' !!
-__conda_setup="$('/Users/kashun/anaconda3/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
-if [ $? -eq 0 ]; then
-    eval "$__conda_setup"
-else
-    if [ -f "/Users/kashun/anaconda3/etc/profile.d/conda.sh" ]; then
-        . "/Users/kashun/anaconda3/etc/profile.d/conda.sh"
+# 自动探测常见的 conda 安装位置（anaconda / miniconda / miniforge），没装就跳过。
+# 若你把 conda 装在了别处，把下面这一行的路径列表改成你的安装目录即可。
+__conda_root=""
+for __d in "$HOME/anaconda3" "$HOME/miniconda3" "$HOME/miniforge3" "/opt/homebrew/anaconda3" "/opt/homebrew/Caskroom/miniconda/base"; do
+    [ -x "$__d/bin/conda" ] && { __conda_root="$__d"; break; }
+done
+if [ -n "$__conda_root" ]; then
+    __conda_setup="$("$__conda_root/bin/conda" 'shell.zsh' 'hook' 2> /dev/null)"
+    if [ $? -eq 0 ]; then
+        eval "$__conda_setup"
+    elif [ -f "$__conda_root/etc/profile.d/conda.sh" ]; then
+        . "$__conda_root/etc/profile.d/conda.sh"
     else
-        export PATH="/Users/kashun/anaconda3/bin:$PATH"
+        export PATH="$__conda_root/bin:$PATH"
     fi
+    unset __conda_setup
 fi
-unset __conda_setup
+unset __conda_root __d
 # <<< conda initialize <<<
 
 
