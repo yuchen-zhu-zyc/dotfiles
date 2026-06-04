@@ -151,8 +151,6 @@ plugins=(git cp)
 
 # ---- fzf ----
 # source ~/.dotfiles/zsh/fzf.zshrc
-# ---- zoxide ----
-eval "$(zoxide init zsh)"
 
 
 # >>> conda initialize >>>
@@ -181,3 +179,10 @@ unset __conda_root __d
 # Source machine-local overrides if present (not tracked in this dotfiles repo).
 # Use this for per-host env vars / aliases / NVM init / etc.
 [ -f "$HOME/.zshrc.local" ] && source "$HOME/.zshrc.local"
+
+
+# ---- zoxide ----
+# zoxide registers chpwd / precmd hooks and warns at runtime if anything
+# else in zshrc rewires those hook arrays after it. Keep this dead last so
+# nothing (conda, ~/.zshrc.local, future additions) sneaks in afterwards.
+eval "$(zoxide init zsh)"
