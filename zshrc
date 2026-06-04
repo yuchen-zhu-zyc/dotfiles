@@ -39,6 +39,16 @@ source ~/.zsh/plugins/zsh-history-substring-search/zsh-history-substring-search.
 ZSH_DISABLE_COMPFIX=true
 source ~/.zsh/plugins/oh-my-zsh/oh-my-zsh.sh
 
+# Override oh-my-zsh's `env_default 'LESS' '-R'` (lib/misc.zsh): without -F,
+# git's pager (less) does NOT auto-quit on short output, so even `git branch`
+# with two lines drops you into an interactive less prompt that shows `(END)`
+# and requires `q` to exit. -FRX is exactly what git sets when LESS is unset;
+# we recreate it here since oh-my-zsh has stolen that slot.
+#   F = quit if output fits on one screen
+#   R = pass ANSI color escapes through raw
+#   X = don't send terminal init/deinit (keep output visible after exit)
+export LESS='-FRX'
+
 # ---- Inherit non-exportable init from ~/.bashrc ----
 # When ~/.bashrc auto-launches us via `exec zsh`, every `export`-ed variable
 # is already inherited (cluster vars, GITLAB_TOKEN, NVM_DIR, etc.). But two
