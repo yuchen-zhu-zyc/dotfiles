@@ -39,6 +39,22 @@ source ~/.zsh/plugins/zsh-history-substring-search/zsh-history-substring-search.
 ZSH_DISABLE_COMPFIX=true
 source ~/.zsh/plugins/oh-my-zsh/oh-my-zsh.sh
 
+# ---- Inherit non-exportable init from ~/.bashrc ----
+# When ~/.bashrc auto-launches us via `exec zsh`, every `export`-ed variable
+# is already inherited (cluster vars, GITLAB_TOKEN, NVM_DIR, etc.). But two
+# kinds of state do NOT survive the exec:
+#   1. aliases  — replay every `alias ...` line from ~/.bashrc
+#   2. shell functions like `nvm` — re-source nvm.sh if NVM_DIR is set
+# Done before sourcing ~/.zsh/aliases.sh so dotfiles aliases (eza, zoxide,
+# ...) take precedence over the bash defaults.
+if [ -f "$HOME/.bashrc" ]; then
+    eval "$(grep -E '^[[:space:]]*alias[[:space:]]+' "$HOME/.bashrc" 2>/dev/null)" 2>/dev/null
+fi
+if [ -n "${NVM_DIR:-}" ] && [ -s "$NVM_DIR/nvm.sh" ]; then
+    source "$NVM_DIR/nvm.sh"
+    [ -s "$NVM_DIR/bash_completion" ] && source "$NVM_DIR/bash_completion"
+fi
+
 # ---- User activation ----
 source ~/.zsh/aliases.sh
 
@@ -162,3 +178,6 @@ unset __conda_root __d
 # <<< conda initialize <<<
 
 
+# Source machine-local overrides if present (not tracked in this dotfiles repo).
+# Use this for per-host env vars / aliases / NVM init / etc.
+[ -f "$HOME/.zshrc.local" ] && source "$HOME/.zshrc.local"

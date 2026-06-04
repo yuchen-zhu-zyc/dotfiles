@@ -1,5 +1,4 @@
 bat
-btop
 eza
 yazi
 zoxide

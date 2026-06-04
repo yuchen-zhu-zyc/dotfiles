@@ -1,0 +1,20 @@
+# local.zshrc.template — copy to ~/.zshrc.local and customize (OPTIONAL).
+#
+#   cp local.zshrc.template ~/.zshrc.local
+#   $EDITOR ~/.zshrc.local
+#
+# Most config does NOT need to live here. zshrc already handles:
+#   - Inheriting `export`-ed env vars from ~/.bashrc (automatic via exec).
+#   - Replaying every `alias ...` line from ~/.bashrc.
+#   - Re-sourcing NVM when NVM_DIR is set.
+#
+# Keep this file for things that are zsh-only or override the rest:
+#   - zsh-only aliases / functions / widgets
+#   - Per-host overrides applied AFTER ~/.zsh/aliases.sh
+
+# ----- Examples -----
+# alias gpush='git push origin HEAD'
+# alias serve='python3 -m http.server'
+#
+# # function: cd into the current git repo root
+# cdr() { cd "$(git rev-parse --show-toplevel 2>/dev/null || echo .)"; }

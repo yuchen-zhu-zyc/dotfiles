@@ -24,12 +24,14 @@ install_from_file() {
 
 
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
 # 安装通用应用
 echo "安装x-cmd ..."
 eval "$(curl https://get.x-cmd.com)"
 echo "🎉 x-cmd安装完成"
 
 echo "🐧 是用x-cmd安装packages ..."
-install_from_file ~/.dotfiles/x-cmd/apps.txt
+install_from_file "$SCRIPT_DIR/apps.txt"
 
 echo "🎉 安装完成！"

@@ -52,21 +52,23 @@ install_from_file() {
 }
 
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
 # 根据系统添加 Homebrew 路径
 if uname -a | grep -q "Darwin"; then
     # macOS
     eval "$(/opt/homebrew/bin/brew shellenv)"
     echo "🍏 brew 安装 mac apps..."
-    install_from_file ~/.dotfiles/brew/brew-mac.txt
+    install_from_file "$SCRIPT_DIR/brew-mac.txt"
 else
     # Linux (x86_64)
     # eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
     echo "🐧 apt 安装 linux apps..."
-    install_from_file ~/.dotfiles/brew/brew-linux.txt
+    install_from_file "$SCRIPT_DIR/brew-linux.txt"
 fi
 
 # 安装通用应用
 # echo "🍺 brew 安装通用 apps..."
-# install_from_file ~/.dotfiles/brew/brew-both.txt
+# install_from_file "$SCRIPT_DIR/brew-both.txt"
 
 echo "🎉 安装完成！"
