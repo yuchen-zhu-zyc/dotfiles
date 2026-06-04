@@ -30,7 +30,7 @@ if existing="$(command -v zsh 2>/dev/null)"; then
     exit 0
 fi
 
-if [ -x "$PREFIX/bin/zsh" ]; then
+if [ -f "$PREFIX/bin/zsh" ] && [ -x "$PREFIX/bin/zsh" ]; then
     echo "✅ zsh already at $PREFIX/bin/zsh"
     "$PREFIX/bin/zsh" --version
     exit 0

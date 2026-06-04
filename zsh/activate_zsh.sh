@@ -36,7 +36,7 @@ fi
 zsh_path=""
 if command -v zsh >/dev/null 2>&1; then
     zsh_path=$(command -v zsh)
-elif [ -x "$HOME/.local/bin/zsh" ]; then
+elif [ -f "$HOME/.local/bin/zsh" ] && [ -x "$HOME/.local/bin/zsh" ]; then
     zsh_path="$HOME/.local/bin/zsh"
 fi
 
@@ -86,14 +86,18 @@ marker_end="# <<< dotfiles activate_zsh <<<"
 # Make sure ~/.bashrc exists.
 [ -f "$bashrc" ] || : > "$bashrc"
 
-# Strip any previous block so this script is idempotent.
-if grep -qF "$marker_begin" "$bashrc"; then
-    awk -v b="$marker_begin" -v e="$marker_end" '
-        $0 == b { skip = 1; next }
-        skip && $0 == e { skip = 0; next }
-        !skip { print }
-    ' "$bashrc" > "$bashrc.tmp" && mv "$bashrc.tmp" "$bashrc"
-fi
+# Strip:
+#   1. Any previous marker block (idempotent re-runs).
+#   2. Legacy un-marked lines from the OLD version of this script which
+#      hardcoded /bin/zsh — those break on hosts where zsh lives elsewhere
+#      (e.g. user-local builds in $HOME/.local/bin/zsh).
+awk -v b="$marker_begin" -v e="$marker_end" '
+    $0 == b { skip = 1; next }
+    skip && $0 == e { skip = 0; next }
+    /^export SHELL=\/bin\/zsh$/ { next }
+    /^exec \/bin\/zsh -l$/ { next }
+    !skip { print }
+' "$bashrc" > "$bashrc.tmp" && mv "$bashrc.tmp" "$bashrc"
 
 # $zsh_path is expanded NOW (concrete path baked into bashrc).
 # Other $-references are escaped so they're evaluated at bashrc load time.
