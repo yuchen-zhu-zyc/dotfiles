@@ -12,6 +12,26 @@
 set -e
 cd "$(dirname "$0")"
 
+# ---- Step runner ----
+# Each setup step is independent enough that one failing shouldn't abort
+# the rest (e.g., zsh plugin clones failing because GitHub rate-limited us
+# should not prevent dotbot from linking ~/.zshrc). We use `if ...; then`
+# to bypass `set -e` for the step itself; bugs *inside* setup.sh (typos,
+# unset vars under `set -u` if we add it) still fail loudly.
+__failed_steps=""
+run_step() {
+    label="$1"; shift
+    printf '\n▶️  %s\n' "$label"
+    if "$@"; then
+        printf '✅ %s\n' "$label"
+    else
+        rc=$?
+        printf '⚠️  %s failed (exit %s) — continuing.\n' "$label" "$rc" >&2
+        __failed_steps="${__failed_steps}
+  - ${label} (exit ${rc})"
+    fi
+}
+
 # Refresh apt indexes if we have passwordless sudo (purely a convenience for
 # brew/install_app.sh users; setup itself doesn't depend on it).
 if [ "$(uname)" = "Linux" ] && command -v sudo >/dev/null 2>&1; then
@@ -23,29 +43,37 @@ if [ "$(uname)" = "Linux" ] && command -v sudo >/dev/null 2>&1; then
 fi
 
 # 1. Ensure zsh is installed (no-root capable).
-bash ./zsh/install_zsh.sh
+run_step "Install zsh"   bash ./zsh/install_zsh.sh
 
 # 2. Make zsh the login shell.
-bash ./zsh/activate_zsh.sh
+run_step "Activate zsh"  bash ./zsh/activate_zsh.sh
 
 # 3. dotbot link. Drop existing top-level dotfile symlinks so dotbot's
 #    `relink: true` re-creates them cleanly. Real (non-symlink) files are
 #    NOT touched here — dotbot will fail loudly so we don't lose user data.
-[ -L "$HOME/.zshrc" ] && rm -f "$HOME/.zshrc"
-[ -L "$HOME/.zsh"   ] && rm -f "$HOME/.zsh"
-[ -L "$HOME/.p10k.zsh" ] && rm -f "$HOME/.p10k.zsh"
-./install
+__link_dotfiles() {
+    [ -L "$HOME/.zshrc" ]    && rm -f "$HOME/.zshrc"
+    [ -L "$HOME/.zsh"   ]    && rm -f "$HOME/.zsh"
+    [ -L "$HOME/.p10k.zsh" ] && rm -f "$HOME/.p10k.zsh"
+    ./install
+}
+run_step "Link dotfiles (dotbot)" __link_dotfiles
 
 # 4. zsh plugins.
-bash ./zsh/install_plugins.sh
+run_step "Install zsh plugins" bash ./zsh/install_plugins.sh
 
 # 5. x-cmd is optional and may fail behind restrictive proxies; never block.
-if [ -x ./x-cmd/install_x.sh ] || [ -f ./x-cmd/install_x.sh ]; then
-    bash ./x-cmd/install_x.sh || echo "⚠️  x-cmd install skipped/failed (continuing)."
+if [ -f ./x-cmd/install_x.sh ]; then
+    run_step "Install x-cmd" bash ./x-cmd/install_x.sh
 fi
 
 echo
-echo "🎉 dotfiles bootstrap complete."
+if [ -n "$__failed_steps" ]; then
+    printf '⚠️  dotfiles bootstrap completed with failures:%s\n' "$__failed_steps"
+    printf '   Fix the listed steps and re-run setup.sh.\n\n'
+else
+    echo "🎉 dotfiles bootstrap complete."
+fi
 echo
 if [ ! -f "$HOME/.zshrc.local" ] && [ -f local.zshrc.template ]; then
     cat <<EOF

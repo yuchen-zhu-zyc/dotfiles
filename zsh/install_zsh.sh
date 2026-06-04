@@ -93,6 +93,17 @@ if [ ! -e /usr/include/ncurses.h ] \
 fi
 
 if [ "$need_ncurses" = "1" ]; then
+    # Export build flags BEFORE building ncurses, so that ncurses's own utility
+    # binaries (clear, tic, tput, tset, reset, infocmp, ...) also get RUNPATH
+    # baked in. Otherwise they install into $PREFIX/bin without an embedded
+    # rpath and fail at runtime with "libtinfow.so.6: cannot open shared object
+    # file" unless LD_LIBRARY_PATH is set. zsh itself would still link fine
+    # (LDFLAGS used to be exported only after the ncurses build), but the
+    # ncurses utilities would silently end up broken.
+    export CPPFLAGS="-I$PREFIX/include -I$PREFIX/include/ncursesw"
+    export LDFLAGS="-L$PREFIX/lib -Wl,-rpath,$PREFIX/lib"
+    export PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig"
+
     echo "🔨 Building ncurses 6.2 (system headers not found)..."
     tar --no-same-owner -xzf "$src/ncurses-6.2.tar.gz"
     (
@@ -105,9 +116,18 @@ if [ "$need_ncurses" = "1" ]; then
         make -j"$(nproc)"
         make install
     )
-    export CPPFLAGS="-I$PREFIX/include -I$PREFIX/include/ncursesw"
-    export LDFLAGS="-L$PREFIX/lib -Wl,-rpath,$PREFIX/lib"
-    export PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig"
+
+    # ncurses' `make install` drops 11 utility binaries (clear, tic, tput,
+    # tset, reset, infocmp, tabs, toe, captoinfo, infotocap, ncursesw6-config)
+    # into $PREFIX/bin. With $PREFIX/bin at the front of PATH they SHADOW the
+    # system /usr/bin/clear etc., which is undesirable for two reasons:
+    #   1. They're ncursesw 6.2 (older than Ubuntu's 6.3) and slightly slower
+    #      to start since their libs / terminfo aren't in the OS page cache.
+    #   2. zsh itself only links against the LIBRARIES in $PREFIX/lib (via its
+    #      embedded RUNPATH) — it does not need any of these utility binaries.
+    # Keep the libs, drop the bins.
+    rm -f -- "$PREFIX/bin"/{clear,tic,tput,tset,reset,infocmp,tabs,toe,captoinfo,infotocap,ncursesw6-config}
+
     extra_cfg=(--with-term-lib="ncursesw tinfow")
 else
     echo "✅ Using system ncurses headers"
